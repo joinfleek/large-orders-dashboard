@@ -1319,10 +1319,10 @@ function App(){
     {k:'mo',l:'Month',sk:'mo'},{k:'gmv',l:'GMV',sk:'gmv'},{k:'age',l:'Aging',sk:'age'},
     {k:'zm',l:'Zone',sk:'zm'},{k:'rw',l:'Rework',sk:'rw'},{k:'st',l:'Status',sk:'st'}
   ];
-  const cols=useMemo(()=>{
+  const mkCols=(f)=>{
     let c=[...baseCols];
-    if(lcF==='Cancelled')c.push({k:'cxr',l:'Cancel Reason',sk:'cxr'});
-    if(lcF==='All')c.push({k:'lc',l:'Lifecycle',sk:'lc'});
+    if(f==='Cancelled')c.push({k:'cxr',l:'Cancel Reason',sk:'cxr'});
+    if(f==='All')c.push({k:'lc',l:'Lifecycle',sk:'lc'});
     c.push(
       {k:'sa',l:'In Status',sk:'sa'},{k:'ot',l:'Track',sk:'dr'},
       {k:'shm',l:'Ship',sk:'shm'},{k:'ofs',l:'OMS',sk:'ofs'},{k:'am',l:'AM',sk:'am'},
@@ -1333,7 +1333,9 @@ function App(){
       {k:'rfc',l:'Refund',sk:'rfc'}
     );
     return c;
-  },[lcF]);
+  };
+  const cols=useMemo(()=>mkCols(lcF),[lcF]);
+  const amCols=useMemo(()=>mkCols(amLcF),[amLcF]);
 
   // AM summary stats helper
   const amStats=useMemo(()=>{
@@ -1523,7 +1525,7 @@ function App(){
             <select value={amOmsF} onChange={e=>{setAmOmsF(e.target.value);setAmPg(0)}}><option value="">All OMS</option><option value="Filled">Filled</option><option value="Pending">Pending</option><option value="Self-Serve">Self-Serve</option></select>
             <div className="count-badge">{amData.length} orders</div>
           </div>
-          <OrderTable rows={amData} cols={cols} tSort={amTSort} sC={amSC} sD={amSD} setSel={setSel} pg={amPg} setPg={setAmPg} PS={PS} lcF={amLcF}/>
+          <OrderTable rows={amData} cols={amCols} tSort={amTSort} sC={amSC} sD={amSD} setSel={setSel} pg={amPg} setPg={setAmPg} PS={PS} lcF={amLcF}/>
         </>}
         {!amTab&&<div style={{textAlign:'center',padding:40,color:'var(--text2)'}}>Select an Account Manager above to view their orders</div>}
       </div>}
