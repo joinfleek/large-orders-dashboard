@@ -1178,7 +1178,7 @@ function AlertCard({icon,title,count,color,children,defaultOpen}){
   </div>;
 }
 
-function OrderTable({rows,cols,tSort,sC,sD,setSel,pg,setPg,PS}){
+function OrderTable({rows,cols,tSort,sC,sD,setSel,pg,setPg,PS,lcF=''}){
   const paged=rows.slice(pg*PS,(pg+1)*PS);
   const tP=Math.ceil(rows.length/PS);
   return<>
@@ -1483,7 +1483,7 @@ function App(){
           <button className="clear-btn" onClick={clr}>{'\u2715'} Clear</button>
           <div className="count-badge">{filtered.length} orders</div>
         </div>
-        <OrderTable rows={filtered} cols={cols} tSort={tSort} sC={sC} sD={sD} setSel={setSel} pg={pg} setPg={setPg} PS={PS}/>
+        <OrderTable rows={filtered} cols={cols} tSort={tSort} sC={sC} sD={sD} setSel={setSel} pg={pg} setPg={setPg} PS={PS} lcF={lcF}/>
       </>}
 
       {/* ===== AM VIEW TAB ===== */}
