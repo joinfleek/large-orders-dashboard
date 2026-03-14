@@ -1179,6 +1179,8 @@ function AlertCard({icon,title,count,color,children,defaultOpen}){
   </div>;
 }
 
+const LcBadge=({lc})=>{const cls=lc==='Open'?'lc-open':lc==='Delivered'?'lc-delivered':'lc-cancelled';return <span className={`lc-badge ${cls}`}>{lc}</span>};
+
 function OrderTable({rows,cols,tSort,sC,sD,setSel,pg,setPg,PS,lcF=''}){
   const paged=rows.slice(pg*PS,(pg+1)*PS);
   const tP=Math.ceil(rows.length/PS);
@@ -1222,7 +1224,6 @@ function OrderTable({rows,cols,tSort,sC,sD,setSel,pg,setPg,PS,lcF=''}){
 }
 
 function App(){
-  const LcBadge=({lc})=>{const cls=lc==='Open'?'lc-open':lc==='Delivered'?'lc-delivered':'lc-cancelled';return <span className={`lc-badge ${cls}`}>{lc}</span>};
   const data=D;
   const openData=useMemo(()=>data.filter(r=>r.lc==='Open'),[data]);
   const cData=CD||[];
