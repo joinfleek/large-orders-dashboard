@@ -830,6 +830,15 @@ function Badge({s}){const m=SM[s]||{l:s,c:''};return<span className={`badge ${m.
 function ZoneBadge({z}){if(!z)return<span className="null">-</span>;return<span className={`zone-tag ${ZC[z]||'zone-row'}`}>{z}</span>}
 function ShipBadge({m}){if(!m)return<span className="null">-</span>;return<span className={`ship-badge ${SC[m]||'ship-air'}`}>{m}</span>}
 function TrackBadge({r}){
+  if(r.lc==='Delivered'){
+    const qcOk=r.t_qa&&r.efd_iso?new Date(r.t_qa)<=new Date(r.efd_iso):!!r.t_qa;
+    const delOk=r.t_del&&r.dd_iso?new Date(r.t_del)<=new Date(r.dd_iso):!!r.t_del;
+    if(qcOk&&delOk)return<span className="track-tag track-ok">✓ Delivered On Time</span>;
+    if(!qcOk&&delOk)return<span className="track-tag track-warn">⚠ FF Delayed, Delivered On Time</span>;
+    if(qcOk&&!delOk)return<span className="track-tag track-delay">✗ Delivery Delayed</span>;
+    return<span className="track-tag track-delay">✗ FF & Delivery Delayed</span>;
+  }
+  if(r.lc==='Cancelled')return<span className="track-tag" style={{background:'#fce4ec',color:'#b71c1c'}}>✕ Cancelled</span>;
   if(r.ot==='awaiting')return<span className="track-tag track-blocked">⏳ Awaiting OMS</span>;
   if(r.ot==null)return<span className="null">-</span>;
   if(r.ot===true)return r.dr<=7?<span className="track-tag track-warn">⚠ Due Soon ({r.dr}d)</span>:<span className="track-tag track-ok">✓ On Track</span>;
@@ -920,21 +929,36 @@ function DetailModal({r,onClose}){
     {key:'courier',label:'COURIER',ts:r.t_co,date:fmtD(r.t_co)},
     {key:'delivered',label:'DELIVERED',ts:r.t_del,date:fmtD(r.t_del)}
   ];
+  const isDelivered=r.lc==='Delivered';
   for(let i=0;i<steps.length;i++){
     if(steps[i].ts){const nx=steps.slice(i+1).find(s=>s.ts);
       if(nx)steps[i].days=db(steps[i].ts,nx.ts);
+      else if(isDelivered){/* delivered: no ongoing counter */}
       else{steps[i].days=dfn(steps[i].ts);steps[i].current=true}}
   }
   const lastDone=steps.reduce((a,s,i)=>s.ts?i:a,-1);
   const fillPct=steps.length>1?((lastDone)/(steps.length-1))*100:0;
   const isPending=r.ot==='awaiting';
-  const totalDays=r.efd_iso&&r.cat_iso?Math.max(1,Math.round((new Date(r.efd_iso)-new Date(r.cat_iso))/864e5)):21;
-  const elapsed=r.age||0;
   const qcDone=!!r.t_qa;
+  // FF on-time: compare QC approved date vs targeted FF date
   const ffOnTime=qcDone&&r.efd_iso?new Date(r.t_qa)<=new Date(r.efd_iso):qcDone;
   const ffDelayDays=qcDone&&r.efd_iso&&!ffOnTime?Math.round((new Date(r.t_qa)-new Date(r.efd_iso))/864e5):0;
-  const ffPct=isPending?0:qcDone?100:Math.min(99,Math.round((elapsed/totalDays)*100));
-  const ffBarColor=isPending?'#ccc':qcDone?(ffOnTime?'var(--green)':'var(--red)'):r.ot===false?'var(--red)':r.dr!=null&&r.dr<=7?'var(--orange)':'var(--green)';
+  const ffEarlyDays=qcDone&&r.efd_iso&&ffOnTime?Math.round((new Date(r.efd_iso)-new Date(r.t_qa))/864e5):0;
+  // Delivery on-time: compare actual delivery date vs targeted delivery date
+  const delDone=!!r.t_del;
+  const delOnTime=delDone&&r.dd_iso?new Date(r.t_del)<=new Date(r.dd_iso):delDone;
+  const delDelayDays=delDone&&r.dd_iso&&!delOnTime?Math.round((new Date(r.t_del)-new Date(r.dd_iso))/864e5):0;
+  const delEarlyDays=delDone&&r.dd_iso&&delOnTime?Math.round((new Date(r.dd_iso)-new Date(r.t_del))/864e5):0;
+  // For delivered orders: recalculate dr/drd from actual dates
+  const effDr=isDelivered&&qcDone&&r.efd_iso?Math.round((new Date(r.efd_iso)-new Date(r.t_qa))/864e5):(r.dr);
+  const effDrd=isDelivered&&delDone&&r.dd_iso?Math.round((new Date(r.dd_iso)-new Date(r.t_del))/864e5):(r.drd);
+  // FF progress
+  const totalDays=r.efd_iso&&r.cat_iso?Math.max(1,Math.round((new Date(r.efd_iso)-new Date(r.cat_iso))/864e5)):21;
+  const elapsed=r.age||0;
+  const ffPct=isPending?0:(qcDone||isDelivered)?100:Math.min(99,Math.round((elapsed/totalDays)*100));
+  const ffBarColor=isPending?'#ccc':(qcDone||isDelivered)?(ffOnTime?'var(--green)':'var(--red)'):r.ot===false?'var(--red)':r.dr!=null&&r.dr<=7?'var(--orange)':'var(--green)';
+  // Days in status: freeze for delivered orders
+  const effSa=isDelivered?null:r.sa;
   const tns=r.tns||[];const tcs=r.tcs||[];const fsts=r.fsts||[];const fdts=r.fdts||[];
   const fns=r.fns||[];const lps=r.lps||[];const fbs=r.fbs||[];
 
@@ -1002,15 +1026,16 @@ function DetailModal({r,onClose}){
             {isPending&&<div className="oms-block"><div className="oms-block-icon">⚠️</div><div><div className="oms-block-text">OMS Form Not Filled — Delivery Cannot Be Calculated</div><div className="oms-block-sub">AM is tagged ({r.am}) but the OMS form has not been submitted yet.</div></div></div>}
             {!isPending&&<div className="ff-calc">📐 <strong>Targeted FF = Delivery Date – {r.shm_buf}d</strong> ({r.shm} buffer)</div>}
             <div className="d-row"><span className="k">Delivery Date</span><span className="v" style={{fontWeight:600}}>{isPending?<span style={{color:'#880e4f'}}>Awaiting OMS</span>:<>{r.dd||'-'} <span style={{fontSize:10,fontWeight:400,color:'var(--text2)',marginLeft:4}}>({r.dd_src==='OMS'?'from OMS':r.dd_src==='OMS (no date)'?'OMS (no date set)':'Air · 21 days'})</span></>}</span></div>
-            <div className="d-row"><span className="k">Targeted FF Date</span><span className="v" style={{fontWeight:700,color:isPending?'#880e4f':(r.dr!=null&&r.dr<0?'var(--red)':'var(--text)')}}>{isPending?'Awaiting OMS':(r.efd||'-')}</span></div>
-            <div className="d-row"><span className="k">Days to FF Deadline</span><span className={`v ${isPending?'':(r.dr!=null?(r.dr<0?'red':r.dr<=7?'orange':'green'):'')}`} style={{fontWeight:700}}>{isPending?<span style={{color:'#880e4f'}}>—</span>:(r.dr!=null?(r.dr>=0?`${r.dr} days left`:`${Math.abs(r.dr)} days overdue`):'-')}</span></div>
-            <div className="d-row"><span className="k">Days to Delivery</span><span className={`v ${isPending?'':(r.drd!=null?(r.drd<0?'red':r.drd<=7?'orange':'green'):'')}`}>{isPending?<span style={{color:'#880e4f'}}>—</span>:(r.drd!=null?(r.drd>=0?`${r.drd} days`:`${Math.abs(r.drd)} days overdue`):'-')}</span></div>
+            <div className="d-row"><span className="k">Targeted FF Date</span><span className="v" style={{fontWeight:700,color:isPending?'#880e4f':(isDelivered?(ffOnTime?'var(--green)':'var(--red)'):(r.dr!=null&&r.dr<0?'var(--red)':'var(--text)'))}}>{isPending?'Awaiting OMS':(r.efd||'-')}</span></div>
+            <div className="d-row"><span className="k">{isDelivered?'FF Deadline Result':'Days to FF Deadline'}</span><span className={`v ${isPending?'':(isDelivered?(ffOnTime?'green':'red'):(effDr!=null?(effDr<0?'red':effDr<=7?'orange':'green'):''))}`} style={{fontWeight:700}}>{isPending?<span style={{color:'#880e4f'}}>—</span>:(isDelivered?(qcDone&&r.efd_iso?(ffOnTime?`✓ Fulfilled ${ffEarlyDays}d early`:`✗ Fulfilled ${ffDelayDays}d late`):(qcDone?'✓ Fulfilled (no target date)':'-')):(effDr!=null?(effDr>=0?`${effDr} days left`:`${Math.abs(effDr)} days overdue`):'-'))}</span></div>
+            <div className="d-row"><span className="k">{isDelivered?'Delivery Result':'Days to Delivery'}</span><span className={`v ${isPending?'':(isDelivered?(delOnTime?'green':'red'):(effDrd!=null?(effDrd<0?'red':effDrd<=7?'orange':'green'):''))}`} style={{fontWeight:700}}>{isPending?<span style={{color:'#880e4f'}}>—</span>:(isDelivered?(delDone&&r.dd_iso?(delOnTime?`✓ Delivered ${delEarlyDays}d early`:`✗ Delivered ${delDelayDays}d late`):(delDone?'✓ Delivered (no target date)':'-')):(effDrd!=null?(effDrd>=0?`${effDrd} days`:`${Math.abs(effDrd)} days overdue`):'-'))}</span></div>
             {!isPending&&<div className="ff-progress"><span style={{fontSize:10,color:'var(--text2)'}}>FF Progress</span><div className="ff-bar-bg"><div className="ff-bar-fill" style={{width:ffPct+'%',background:ffBarColor}}/></div><span className="ff-pct" style={{color:ffBarColor}}>{ffPct}%</span></div>}
-            {!isPending&&qcDone&&<div className="ff-status-msg" style={{background:ffOnTime?'#e8f5e9':'#ffebee',color:ffOnTime?'#2e7d32':'#c62828',borderRadius:6,padding:'6px 12px',fontSize:12,fontWeight:600,marginTop:4,display:'flex',alignItems:'center',gap:6}}>{ffOnTime?<><span>✓</span> Fulfilled on time</>:<><span>✗</span> Delayed by {ffDelayDays} day{ffDelayDays!==1?'s':''}</>}</div>}
+            {!isPending&&qcDone&&<div className="ff-status-msg" style={{background:ffOnTime?'#e8f5e9':'#ffebee',color:ffOnTime?'#2e7d32':'#c62828',borderRadius:6,padding:'6px 12px',fontSize:12,fontWeight:600,marginTop:4,display:'flex',alignItems:'center',gap:6}}>{ffOnTime?<><span>✓</span> Fulfilled on time{r.efd_iso?` (${ffEarlyDays}d before deadline)`:''}</>:<><span>✗</span> Fulfilment delayed by {ffDelayDays} day{ffDelayDays!==1?'s':''}</>}</div>}
+            {isDelivered&&delDone&&<div className="ff-status-msg" style={{background:delOnTime?'#e8f5e9':'#ffebee',color:delOnTime?'#2e7d32':'#c62828',borderRadius:6,padding:'6px 12px',fontSize:12,fontWeight:600,marginTop:4,display:'flex',alignItems:'center',gap:6}}>{delOnTime?<><span>✓</span> Delivered on time{r.dd_iso?` (${delEarlyDays}d before deadline)`:''}</>:<><span>✗</span> Delivery delayed by {delDelayDays} day{delDelayDays!==1?'s':''}</>}</div>}
             <div className="d-row"><span className="k">Fulfilment Status</span><span className="v"><TrackBadge r={r}/></span></div>
             <div className="d-row"><span className="k">Current Status</span><span className="v"><Badge s={r.st}/></span></div>
-            <div className="d-row"><span className="k">Days in Current Status</span><span className="v"><Ag d={r.sa}/></span></div>
-            <div className="d-row"><span className="k">Order Aging (Total)</span><span className="v"><Ag d={r.age}/></span></div>
+            {!isDelivered&&<div className="d-row"><span className="k">Days in Current Status</span><span className="v"><Ag d={r.sa}/></span></div>}
+            <div className="d-row"><span className="k">{isDelivered?'Total Order Duration':'Order Aging (Total)'}</span><span className="v">{isDelivered&&r.t_del&&r.cat_iso?<span style={{fontWeight:600}}>{db(r.cat_iso,r.t_del)} days (placed → delivered)</span>:<Ag d={r.age}/>}</span></div>
             <div className="d-row"><span className="k">OMS Status</span><span className="v">{r.omss||'-'}</span></div>
           </div>
           <div className="d-section full">
