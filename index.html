@@ -973,7 +973,7 @@ function DetailModal({r,onClose}){
         <div className="d-head">
           <div className="d-top">
             <div>
-              <h2>{r.fid} <span>· {r.v}</span></h2>
+              <h2>{r.fid} <span>· {r.vn}</span></h2>
               <div className="d-item">{r.in}</div>
               <div className="d-tags">
                 <ZoneBadge z={r.zm}/>
@@ -1009,7 +1009,7 @@ function DetailModal({r,onClose}){
         <div className="d-body">
           <div className="d-section">
             <h4>Order</h4>
-            {[['Fleek ID',r.fid],['Month',r.mo],['Customer',r.cn],['Customer Email',r.ce],['Vendor',r.v],['Item',r.in],
+            {[['Fleek ID',r.fid],['Month',r.mo],['Customer',r.cn],['Customer Email',r.ce],['Vendor',r.vn],['Item',r.in],
               ['GMV','£'+Number(r.gmv).toLocaleString()],['Zone Mapping',null],['Country',r.cc],
               ['Self Ship',r.ss!=null?(r.ss?'Yes':'No'):'-'],['Customer Type',r.ct],
               ['Rework Order',null]
@@ -1217,7 +1217,7 @@ function OrderTable({rows,cols,tSort,sC,sD,setSel,pg,setPg,PS,lcF=''}){
       <tbody>{paged.map((r,i)=>(
         <tr key={r.fid+'-'+i} onClick={()=>setSel(r)}>
           <td style={{color:'var(--accent)',fontWeight:600}}>{r.fid}</td>
-          <td><N v={r.v}/></td><td title={r.cn}><N v={r.cn}/></td>
+          <td><N v={r.vn}/></td><td title={r.cn}><N v={r.cn}/></td>
           <td><N v={r.mo}/></td><td><Gv v={r.gmv}/></td><td><Ag d={r.age}/></td>
           <td><ZoneBadge z={r.zm}/></td>
           <td>{r.rw?<span className="rework-tag">{'\u21BB'} Rework</span>:<span className="null">-</span>}</td>
@@ -1276,7 +1276,7 @@ function App(){
   // Filtered data for All Orders tab
   const filtered=useMemo(()=>{
     let d=data;
-    if(search){const s=search.toLowerCase();d=d.filter(r=>(r.fid||'').toLowerCase().includes(s)||(r.v||'').toLowerCase().includes(s)||(r.cn||'').toLowerCase().includes(s)||(r.ce||'').toLowerCase().includes(s)||(r.in||'').toLowerCase().includes(s)||String(r.on).includes(s)||(r.tns||[]).some(t=>(t||'').toLowerCase().includes(s)))}
+    if(search){const s=search.toLowerCase();d=d.filter(r=>(r.fid||'').toLowerCase().includes(s)||(r.vn||'').toLowerCase().includes(s)||(r.cn||'').toLowerCase().includes(s)||(r.ce||'').toLowerCase().includes(s)||(r.in||'').toLowerCase().includes(s)||String(r.on).includes(s)||(r.tns||[]).some(t=>(t||'').toLowerCase().includes(s)))}
     if(stF)d=d.filter(r=>r.st===stF);if(moF)d=d.filter(r=>r.mo===moF);
     if(zF)d=d.filter(r=>(r.zm||'Unknown')===zF);
     if(agF){if(agF==='0-14')d=d.filter(r=>r.age!=null&&r.age<=14);else if(agF==='15-30')d=d.filter(r=>r.age>14&&r.age<=30);else if(agF==='31-60')d=d.filter(r=>r.age>30&&r.age<=60);else if(agF==='60+')d=d.filter(r=>r.age>60)}
@@ -1291,7 +1291,7 @@ function App(){
   const amData=useMemo(()=>{
     if(!amTab)return[];
     let d=data.filter(r=>r.am===amTab);
-    if(amSearch){const s=amSearch.toLowerCase();d=d.filter(r=>(r.fid||'').toLowerCase().includes(s)||(r.v||'').toLowerCase().includes(s)||(r.cn||'').toLowerCase().includes(s)||(r.in||'').toLowerCase().includes(s))}
+    if(amSearch){const s=amSearch.toLowerCase();d=d.filter(r=>(r.fid||'').toLowerCase().includes(s)||(r.vn||'').toLowerCase().includes(s)||(r.cn||'').toLowerCase().includes(s)||(r.in||'').toLowerCase().includes(s))}
     if(amStF)d=d.filter(r=>r.st===amStF);
     if(amOtF){if(amOtF==='on')d=d.filter(r=>r.ot===true&&r.dr>7);else if(amOtF==='due')d=d.filter(r=>r.ot===true&&r.dr!=null&&r.dr<=7);else if(amOtF==='delay')d=d.filter(r=>r.ot===false);else if(amOtF==='await')d=d.filter(r=>r.ot==='awaiting')}
     if(amOmsF)d=d.filter(r=>r.ofs===amOmsF);
@@ -1338,7 +1338,7 @@ function App(){
   // FF delay by zone
   const delayByZone=useMemo(()=>{const m={};totalDelayed.forEach(r=>{const z=r.zm||'Unknown';if(!m[z])m[z]={cnt:0,gmv:0};m[z].cnt++;m[z].gmv+=(r.gmv||0)});return Object.entries(m).sort((a,b)=>b[1].cnt-a[1].cnt)},[totalDelayed]);
   // FF delay by vendor (top 10)
-  const delayByVendor=useMemo(()=>{const m={};totalDelayed.forEach(r=>{const v=r.v||'Unknown';if(!m[v])m[v]={cnt:0,gmv:0};m[v].cnt++;m[v].gmv+=(r.gmv||0)});return Object.entries(m).sort((a,b)=>b[1].cnt-a[1].cnt).slice(0,10)},[totalDelayed]);
+  const delayByVendor=useMemo(()=>{const m={};totalDelayed.forEach(r=>{const v=r.vn||'Unknown';if(!m[v])m[v]={cnt:0,gmv:0};m[v].cnt++;m[v].gmv+=(r.gmv||0)});return Object.entries(m).sort((a,b)=>b[1].cnt-a[1].cnt).slice(0,10)},[totalDelayed]);
 
   const baseCols=[
     {k:'fid',l:'Fleek ID',sk:'fid'},{k:'v',l:'Vendor',sk:'v'},{k:'cn',l:'Customer',sk:'cn'},
@@ -1418,7 +1418,7 @@ function App(){
             <div className="amt-hdr"><span>Fleek ID</span><span>Vendor</span><span>Status</span><span>Overdue</span><span>Aging</span><span>AM</span></div>
             {ffDelayed.sort((a,b)=>(a.dr||0)-(b.dr||0)).map(r=><div key={r.fid} className="amt-row" onClick={()=>setSel(r)}>
               <span className="amt-id">{r.fid}</span>
-              <span className="amt-vendor">{r.v}</span>
+              <span className="amt-vendor">{r.vn}</span>
               <span><Badge s={r.st}/></span>{lcF==='Cancelled'&&<span className="cr-cell">{r.cxr||'N/A'}</span>}{lcF==='All'&&<span><LcBadge lc={r.lc}/></span>}
               <span className="amt-delay" style={{color:'var(--red)'}}>{r.dr!=null?`${Math.abs(r.dr)}d`:'-'}</span>
               <span style={{fontSize:11,color:r.age>=30?'var(--red)':'var(--text2)'}}>{r.age}d</span>
@@ -1434,7 +1434,7 @@ function App(){
             <div className="amt-hdr"><span>Fleek ID</span><span>Vendor</span><span>Days in QC Approved</span><span>Total Aging</span><span>AM</span></div>
             {qcStuck.sort((a,b)=>(b.sa||0)-(a.sa||0)).map(r=><div key={r.fid} className="amt-row" onClick={()=>setSel(r)}>
               <span className="amt-id">{r.fid}</span>
-              <span className="amt-vendor">{r.v}</span>
+              <span className="amt-vendor">{r.vn}</span>
               <span style={{fontWeight:700,color:r.sa>=10?'var(--red)':r.sa>=5?'var(--orange)':'var(--text)'}}>{r.sa}d</span>
               <span style={{fontSize:11,color:r.age>=30?'var(--red)':'var(--text2)'}}>{r.age}d</span>
               <span className="amt-am">{r.am||'-'}</span>
@@ -1449,7 +1449,7 @@ function App(){
             <div className="amt-hdr"><span>Fleek ID</span><span>Vendor</span><span>Status</span><span>Overdue</span><span>Aging</span><span>AM</span></div>
             {transitDelayed.sort((a,b)=>(a.dr||0)-(b.dr||0)).map(r=><div key={r.fid} className="amt-row" onClick={()=>setSel(r)}>
               <span className="amt-id">{r.fid}</span>
-              <span className="amt-vendor">{r.v}</span>
+              <span className="amt-vendor">{r.vn}</span>
               <span><Badge s={r.st}/></span>{lcF==='Cancelled'&&<span className="cr-cell">{r.cxr||'N/A'}</span>}{lcF==='All'&&<span><LcBadge lc={r.lc}/></span>}
               <span className="amt-delay" style={{color:'var(--red)'}}>{r.dr!=null?`${Math.abs(r.dr)}d`:'-'}</span>
               <span style={{fontSize:11,color:r.age>=30?'var(--red)':'var(--text2)'}}>{r.age}d</span>
