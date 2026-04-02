@@ -1009,7 +1009,7 @@ function DetailModal({r,onClose}){
         <div className="d-body">
           <div className="d-section">
             <h4>Order</h4>
-            {[['Fleek ID',r.fid],['Month',r.mo],['Customer',r.cn],['Vendor',r.v],['Item',r.in],
+            {[['Fleek ID',r.fid],['Month',r.mo],['Customer',r.cn],['Customer Email',r.ce],['Vendor',r.v],['Item',r.in],
               ['GMV','£'+Number(r.gmv).toLocaleString()],['Zone Mapping',null],['Country',r.cc],
               ['Self Ship',r.ss!=null?(r.ss?'Yes':'No'):'-'],['Customer Type',r.ct],
               ['Rework Order',null]
@@ -1276,7 +1276,7 @@ function App(){
   // Filtered data for All Orders tab
   const filtered=useMemo(()=>{
     let d=data;
-    if(search){const s=search.toLowerCase();d=d.filter(r=>(r.fid||'').toLowerCase().includes(s)||(r.v||'').toLowerCase().includes(s)||(r.cn||'').toLowerCase().includes(s)||(r.in||'').toLowerCase().includes(s)||String(r.on).includes(s)||(r.tns||[]).some(t=>(t||'').toLowerCase().includes(s)))}
+    if(search){const s=search.toLowerCase();d=d.filter(r=>(r.fid||'').toLowerCase().includes(s)||(r.v||'').toLowerCase().includes(s)||(r.cn||'').toLowerCase().includes(s)||(r.ce||'').toLowerCase().includes(s)||(r.in||'').toLowerCase().includes(s)||String(r.on).includes(s)||(r.tns||[]).some(t=>(t||'').toLowerCase().includes(s)))}
     if(stF)d=d.filter(r=>r.st===stF);if(moF)d=d.filter(r=>r.mo===moF);
     if(zF)d=d.filter(r=>(r.zm||'Unknown')===zF);
     if(agF){if(agF==='0-14')d=d.filter(r=>r.age!=null&&r.age<=14);else if(agF==='15-30')d=d.filter(r=>r.age>14&&r.age<=30);else if(agF==='31-60')d=d.filter(r=>r.age>30&&r.age<=60);else if(agF==='60+')d=d.filter(r=>r.age>60)}
