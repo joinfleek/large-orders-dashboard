@@ -161,8 +161,6 @@ def main():
       AND o.total_order_line_amount * 1.3 >= 2000
       AND o.vendor NOT IN ('alexprodshop','walitest','fleek-credit','container-carpool')
       AND NOT REGEXP_CONTAINS(o.item_name, '(?i)ADDITIONAL (?:PAYMENT|CHARGES)')
-      AND NOT REGEXP_CONTAINS(o.item_name, '(?i)shipping')
-      AND NOT REGEXP_CONTAINS(o.item_name, '(?i)payment')
     ORDER BY o.created_at DESC
     """
     orders_rows = run_bq(orders_sql)
