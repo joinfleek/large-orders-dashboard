@@ -97,6 +97,8 @@ td{padding:6px 10px;white-space:nowrap;max-width:180px;overflow:hidden;text-over
 .zone-row{background:#6c5ce7;color:#fff}
 .gmv-tag{color:var(--accent);font-size:18px;font-weight:700}
 .rework-tag{background:#d63031;color:#fff;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.4px}
+.slack-chip{background:#4A154B;color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:.15s}
+.slack-chip:hover{background:#611f5f;transform:translateY(-1px)}
 .track-tag{padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.3px}
 .track-ok{background:#e8f5e9;color:#1b5e20}
 .track-delay{background:#ffebee;color:#c62828}
@@ -821,6 +823,11 @@ td{padding:6px 10px;white-space:nowrap;max-width:180px;overflow:hidden;text-over
 ;</script>
 <script type="text/babel">
 const{useState,useMemo}=React;
+const SLACK_WS='fleek-talk';
+const SLACK_CH='C0AQM1XNVQ9';
+const SLACK_LINKS={'140493_26':'https://fleek-talk.slack.com/archives/C0AQM1XNVQ9/p1775549375050279','140562_90':'https://fleek-talk.slack.com/archives/C0AQM1XNVQ9/p1775549374142959'};
+const slackUrl=(fid)=>SLACK_LINKS[fid]||`https://${SLACK_WS}.slack.com/search/${encodeURIComponent(fid)}`;
+const slackHas=(fid)=>!!SLACK_LINKS[fid];
 const SM={CREATED:{l:'New Order',c:'b-created'},ACCEPTED:{l:'Accepted',c:'b-accepted'},PICKUP_READY:{l:'Pickup Ready',c:'b-pickup'},PICKUP_SUCCESSFULL:{l:'Picked Up',c:'b-pickup'},PICKUP_FAILED:{l:'Pickup Failed',c:'b-pickup-fail'},QC_PENDING:{l:'QC Pending',c:'b-qc-pending'},QC_APPROVED:{l:'QC Approved',c:'b-qc-approved'},QC_HOLD:{l:'QC Hold',c:'b-qc-hold'},QC_REJECTED:{l:'QC Rejected',c:'b-qc-rejected'},HANDED_OVER_TO_LOGISTICS_PARTNER:{l:'LP Handover',c:'b-lp'},FREIGHT:{l:'Freight',c:'b-freight'},FREIGHT_DEPARTED:{l:'Freight Dep.',c:'b-freight-dep'},FREGHT_CUSTOMS:{l:'Freight Customs',c:'b-freight'},COURIER:{l:'Courier',c:'b-courier'},COURIER_CUSTOMS:{l:'Courier Customs',c:'b-courier-cust'}};
 const ZC={'PK - Zone':'zone-pk-z','PK - Non Zone':'zone-pk-nz','IN':'zone-in','ROW':'zone-row'};
 const SC={'Air':'ship-air','Sea':'ship-sea','Sea-Air':'ship-seaair'};
@@ -986,6 +993,7 @@ function DetailModal({r,onClose}){
                 {r.am&&r.am!=='Self Serve'&&<span style={{background:'#ede9fe',color:'#6c5ce7',padding:'2px 8px',borderRadius:4,fontSize:10,fontWeight:600}}>AM: {r.am}</span>}
                 {r.bc>0&&<span style={{background:'#e3f2fd',color:'#1565c0',padding:'2px 8px',borderRadius:4,fontSize:10,fontWeight:600}}>{r.bc} Batch{r.bc>1?'es':''}</span>}
                 {r.rfc>0&&<span className="refund-flag">£ Refund</span>}
+                <a href={slackUrl(r.fid)} target="_blank" rel="noopener" className="slack-chip" title={slackHas(r.fid)?'Open Slack thread':'Search this order in Slack'}>💬 Slack {slackHas(r.fid)?'Thread':'Search'}</a>
               </div>
             </div>
             <button className="close-btn" onClick={onClose}>✕</button>
@@ -1216,7 +1224,7 @@ function OrderTable({rows,cols,tSort,sC,sD,setSel,pg,setPg,PS,lcF=''}){
       </tr></thead>
       <tbody>{paged.map((r,i)=>(
         <tr key={r.fid+'-'+i} onClick={()=>setSel(r)}>
-          <td style={{color:'var(--accent)',fontWeight:600}}>{r.fid}</td>
+          <td style={{color:'var(--accent)',fontWeight:600}}>{r.fid} <a href={slackUrl(r.fid)} target="_blank" rel="noopener" onClick={e=>e.stopPropagation()} title={slackHas(r.fid)?'Open Slack thread':'Search this order in Slack'} style={{marginLeft:4,textDecoration:'none',opacity:slackHas(r.fid)?1:0.4}}>💬</a></td>
           <td><N v={r.vn}/></td><td title={r.cn}><N v={r.cn}/></td>
           <td><N v={r.mo}/></td><td><Gv v={r.gmv}/></td><td><Ag d={r.age}/></td>
           <td><ZoneBadge z={r.zm}/></td>
