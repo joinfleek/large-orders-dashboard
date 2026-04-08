@@ -1586,7 +1586,7 @@ function App(){
         </div>
         <div className="ct-list">
           {ctFiltered.length===0?<div className="ct-empty">No containers found</div>:ctFiltered.map(c=>(
-            <div key={c.cn} className="ct-card" onClick={()=>setCtSel(c)}>
+            <div key={c.id||c.cn} className="ct-card" onClick={()=>setCtSel(c)}>
               <div className="ct-card-header">
                 <div className="ct-cn">{c.cn}</div>
                 <span className="ct-size-badge">{c.size||'N/A'}</span>
