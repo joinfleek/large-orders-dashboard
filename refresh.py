@@ -103,7 +103,7 @@ def main():
       SELECT order_line_id, shipping_mode, targetted_delivery_date,
         oms_status,
         ROW_NUMBER() OVER (PARTITION BY order_line_id ORDER BY oms_updated_at DESC) AS rn
-      FROM `dogwood-baton-345622.sherry.oms_data_parse`
+      FROM `dogwood-baton-345622.fleek_ops.order_management_system`
     ),
     am AS (
       SELECT customer_id_key, owner_2_ AS account_manager
@@ -170,29 +170,26 @@ def main():
     print("Querying tracking...")
     tracking_sql = """
     SELECT
-      REPLACE(internal_order_id, '/', '_') AS fleek_id,
-      TO_JSON_STRING(courier_tracking_ids) AS tracking_ids_json,
-      courier_tracking_id, courier_service
-    FROM `dogwood-baton-345622.aurora_postgres_public.line_item_logistic`
-    WHERE (_fivetran_deleted <> true OR _fivetran_deleted IS NULL)
+      fleek_id,
+      courier_tracking_id,
+      courier_partner_name AS courier_service
+    FROM `dogwood-baton-345622.fleek_raw.order_line_logistics`
     """
     tracking_rows = run_bq(tracking_sql)
     print(f"  Got {len(tracking_rows)} tracking rows")
 
-    # Build tracking map
+    # Build tracking map (new table has one row per box)
     tracking_map = {}
     for row in tracking_rows:
         fid = row.get('fleek_id')
-        tids_json = row.get('tracking_ids_json')
-        tns = []
-        if tids_json:
-            try:
-                tns = json.loads(tids_json)
-                if not isinstance(tns, list): tns = [str(tns)]
-            except: pass
-        if not tns and row.get('courier_tracking_id'):
-            tns = [row['courier_tracking_id']]
-        tracking_map[fid] = {'tns': tns, 'cs': row.get('courier_service')}
+        tid = row.get('courier_tracking_id')
+        cs = row.get('courier_service')
+        if fid not in tracking_map:
+            tracking_map[fid] = {'tns': [], 'cs': cs}
+        if tid and tid not in tracking_map[fid]['tns']:
+            tracking_map[fid]['tns'].append(tid)
+        if cs and not tracking_map[fid]['cs']:
+            tracking_map[fid]['cs'] = cs
 
     # 3) Transform orders
     print("Transforming...")
